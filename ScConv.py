@@ -1,7 +1,7 @@
 '''
 Description: 
 Date: 2023-07-21 14:36:27
-LastEditTime: 2023-07-21 18:39:03
+LastEditTime: 2023-07-21 22:33:58
 FilePath: /chengdongzhou/ScConv.py
 '''
 import torch
@@ -33,10 +33,11 @@ class GroupBatchnorm2d(nn.Module):
 class SRU(nn.Module):
     def __init__(self,
                  oup_channels:int, 
+                 group_num:int = 16,
                  gate_treshold:float = 0.5 
                  ):
         super().__init__()
-        self.gn             = GroupBatchnorm2d( oup_channels, group_num = oup_channels )
+        self.gn             = GroupBatchnorm2d( oup_channels, group_num = group_num )
         self.gate_treshold  = gate_treshold
         self.sigomid        = nn.Sigmoid()
 
@@ -98,6 +99,7 @@ class CRU(nn.Module):
 class ScConv(nn.Module):
     def __init__(self,
                 op_channel:int,
+                group_num:int = 16,
                 gate_treshold:float = 0.5,
                 alpha:float = 0.5,
                 squeeze_radio:int = 2 ,
@@ -106,6 +108,7 @@ class ScConv(nn.Module):
                  ):
         super().__init__()
         self.SRU = SRU( op_channel, 
+                       group_num            = group_num,  
                        gate_treshold        = gate_treshold )
         self.GRU = CRU( op_channel, 
                        alpha                = alpha, 
