@@ -17,7 +17,7 @@ class GroupBatchnorm2d(nn.Module):
         super(GroupBatchnorm2d,self).__init__()
         assert c_num    >= group_num
         self.group_num  = group_num
-        self.gamma      = nn.Parameter( torch.randn(c_num, 1, 1)     )
+        self.gamma      = nn.Parameter( torch.randn(c_num, 1, 1)    )
         self.beta       = nn.Parameter( torch.zeros(c_num, 1, 1)    )
         self.eps        = eps
 
@@ -94,8 +94,8 @@ class CRU(nn.Module):
         # Fuse
         out     = torch.cat( [Y1,Y2], dim= 1 )
         out     = F.softmax( self.advavg(out), dim=1 ) * out
-        out1,out2 = torch.split(out,out.size(1)//2,dim=1)
-        return out1+out2
+        out1, out2         = torch.split(out,out.size(1)//2,dim=1)
+        return out1 + out2
 
 
 class ScConv(nn.Module):
