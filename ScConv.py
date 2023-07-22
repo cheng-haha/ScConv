@@ -103,7 +103,7 @@ class ScConv(nn.Module):
                 op_channel:int,
                 group_num:int = 16,
                 gate_treshold:float = 0.5,
-                alpha:float = 3/4,
+                alpha:float = 1/2,
                 squeeze_radio:int = 2 ,
                 group_size:int = 2,
                 group_kernel_size:int = 3,
