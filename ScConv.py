@@ -1,7 +1,7 @@
 '''
 Description: 
 Date: 2023-07-21 14:36:27
-LastEditTime: 2023-07-21 22:46:34
+LastEditTime: 2023-07-22 14:55:44
 FilePath: /chengdongzhou/ScConv.py
 '''
 import torch
@@ -17,7 +17,7 @@ class GroupBatchnorm2d(nn.Module):
         super(GroupBatchnorm2d,self).__init__()
         assert c_num    >= group_num
         self.group_num  = group_num
-        self.gamma      = nn.Parameter( torch.randn(c_num, 1, 1)    )
+        self.gamma      = nn.Parameter( torch.randn(c_num, 1, 1)     )
         self.beta       = nn.Parameter( torch.zeros(c_num, 1, 1)    )
         self.eps        = eps
 
@@ -67,7 +67,7 @@ class CRU(nn.Module):
     '''
     def __init__(self, 
                  op_channel:int,
-                 alpha:float = 0.5,
+                 alpha:float = 1/2,
                  squeeze_radio:int = 2 ,
                  group_size:int = 2,
                  group_kernel_size:int = 3,
@@ -81,7 +81,7 @@ class CRU(nn.Module):
         self.GWC            = nn.Conv2d(up_channel//squeeze_radio, op_channel,kernel_size=group_kernel_size, stride=1,padding=group_kernel_size//2, groups = group_size)
         self.PWC1           = nn.Conv2d(up_channel//squeeze_radio, op_channel,kernel_size=1, bias=False)
         #low
-        self.PWC2           = nn.Conv2d(up_channel//squeeze_radio, op_channel-up_channel//squeeze_radio,kernel_size=1, bias=False)
+        self.PWC2           = nn.Conv2d(low_channel//squeeze_radio, op_channel-low_channel//squeeze_radio,kernel_size=1, bias=False)
         self.advavg         = nn.AdaptiveAvgPool2d(1)
 
     def forward(self,x):
@@ -94,8 +94,8 @@ class CRU(nn.Module):
         # Fuse
         out     = torch.cat( [Y1,Y2], dim= 1 )
         out     = F.softmax( self.advavg(out), dim=1 ) * out
-        out1, out2         = torch.split(out,out.size(1)//2,dim=1)
-        return out1 + out2
+        out1,out2 = torch.split(out,out.size(1)//2,dim=1)
+        return out1+out2
 
 
 class ScConv(nn.Module):
@@ -103,7 +103,7 @@ class ScConv(nn.Module):
                 op_channel:int,
                 group_num:int = 16,
                 gate_treshold:float = 0.5,
-                alpha:float = 0.5,
+                alpha:float = 3/4,
                 squeeze_radio:int = 2 ,
                 group_size:int = 2,
                 group_kernel_size:int = 3,
@@ -112,7 +112,7 @@ class ScConv(nn.Module):
         self.SRU = SRU( op_channel, 
                        group_num            = group_num,  
                        gate_treshold        = gate_treshold )
-        self.CRU = CRU( op_channel, 
+        self.GRU = CRU( op_channel, 
                        alpha                = alpha, 
                        squeeze_radio        = squeeze_radio ,
                        group_size           = group_size ,
@@ -120,7 +120,7 @@ class ScConv(nn.Module):
     
     def forward(self,x):
         x = self.SRU(x)
-        x = self.CRU(x)
+        x = self.GRU(x)
         return x
 
 
