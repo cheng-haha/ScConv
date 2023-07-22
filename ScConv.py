@@ -112,7 +112,7 @@ class ScConv(nn.Module):
         self.SRU = SRU( op_channel, 
                        group_num            = group_num,  
                        gate_treshold        = gate_treshold )
-        self.GRU = CRU( op_channel, 
+        self.CRU = CRU( op_channel, 
                        alpha                = alpha, 
                        squeeze_radio        = squeeze_radio ,
                        group_size           = group_size ,
@@ -120,7 +120,7 @@ class ScConv(nn.Module):
     
     def forward(self,x):
         x = self.SRU(x)
-        x = self.GRU(x)
+        x = self.CRU(x)
         return x
 
 
