@@ -45,7 +45,7 @@ class SRU(nn.Module):
 
     def forward(self,x):
         gn_x        = self.gn(x)
-        w_gamma     = F.softmax(self.gn.gamma,dim=0)
+        w_gamma     = self.gn.gamma/sum(self.gn.gamma)
         reweigts    = self.sigomid( gn_x * w_gamma )
         # Gate
         info_mask   = reweigts>=self.gate_treshold
