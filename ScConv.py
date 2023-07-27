@@ -1,7 +1,7 @@
 '''
 Description: 
 Date: 2023-07-21 14:36:27
-LastEditTime: 2023-07-22 14:55:44
+LastEditTime: 2023-07-27 18:41:47
 FilePath: /chengdongzhou/ScConv.py
 '''
 import torch
@@ -48,10 +48,10 @@ class SRU(nn.Module):
         w_gamma     = F.softmax(self.gn.gamma,dim=0)
         reweigts    = self.sigomid( gn_x * w_gamma )
         # Gate
-        info_mask   = w_gamma>self.gate_treshold
-        noninfo_mask= w_gamma<=self.gate_treshold
-        x_1         = info_mask*reweigts * x
-        x_2         = noninfo_mask*reweigts * x
+        info_mask   = reweigts>=self.gate_treshold
+        noninfo_mask= reweigts<self.gate_treshold
+        x_1         = info_mask * x
+        x_2         = noninfo_mask * x
         x           = self.reconstruct(x_1,x_2)
         return x
     
