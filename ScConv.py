@@ -42,7 +42,6 @@ class SRU(nn.Module):
         self.gn             = nn.GroupNorm( num_channels = oup_channels, num_groups = group_num ) if torch_gn else GroupBatchnorm2d(c_num = oup_channels, group_num = group_num)
         self.gate_treshold  = gate_treshold
         self.sigomid        = nn.Sigmoid()
-        self.bn             = nn.BatchNorm2d(oup_channels)
 
     def forward(self,x):
         gn_x        = self.gn(x)
@@ -55,7 +54,6 @@ class SRU(nn.Module):
         x_1         = info_mask * gn_x
         x_2         = noninfo_mask * gn_x
         x           = self.reconstruct(x_1,x_2)
-        x           = self.bn(x)
         return x
     
     def reconstruct(self,x_1,x_2):
