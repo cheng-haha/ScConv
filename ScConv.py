@@ -17,10 +17,9 @@ class GroupBatchnorm2d(nn.Module):
         super(GroupBatchnorm2d,self).__init__()
         assert c_num    >= group_num
         self.group_num  = group_num
-        self.gamma      = nn.Parameter( torch.randn(c_num, 1, 1)    )
-        self.beta       = nn.Parameter( torch.zeros(c_num, 1, 1)    )
+        self.weight     = nn.Parameter( torch.randn(c_num, 1, 1)    )
+        self.bias       = nn.Parameter( torch.zeros(c_num, 1, 1)    )
         self.eps        = eps
-
     def forward(self, x):
         N, C, H, W  = x.size()
         x           = x.view(   N, self.group_num, -1   )
@@ -28,31 +27,35 @@ class GroupBatchnorm2d(nn.Module):
         std         = x.std (   dim = 2, keepdim = True )
         x           = (x - mean) / (std+self.eps)
         x           = x.view(N, C, H, W)
-        return x * self.gamma + self.beta
+        return x * self.weight + self.bias
 
 
 class SRU(nn.Module):
     def __init__(self,
                  oup_channels:int, 
                  group_num:int = 16,
-                 gate_treshold:float = 0.5 
+                 gate_treshold:float = 0.5,
+                 torch_gn:bool = False
                  ):
         super().__init__()
         
-        self.gn             = GroupBatchnorm2d( oup_channels, group_num = group_num )
+        self.gn             = nn.GroupNorm( num_channels = oup_channels, num_groups = group_num ) if torch_gn else GroupBatchnorm2d(c_num = oup_channels, group_num = group_num)
         self.gate_treshold  = gate_treshold
         self.sigomid        = nn.Sigmoid()
+        self.bn             = nn.BatchNorm2d(oup_channels)
 
     def forward(self,x):
         gn_x        = self.gn(x)
-        w_gamma     = self.gn.gamma/sum(self.gn.gamma)
+        w_gamma     = self.gn.weight/sum(self.gn.weight)
+        w_gamma     = w_gamma.view(1,-1,1,1)
         reweigts    = self.sigomid( gn_x * w_gamma )
         # Gate
         info_mask   = reweigts>=self.gate_treshold
         noninfo_mask= reweigts<self.gate_treshold
-        x_1         = info_mask * x
-        x_2         = noninfo_mask * x
+        x_1         = info_mask * gn_x
+        x_2         = noninfo_mask * gn_x
         x           = self.reconstruct(x_1,x_2)
+        x           = self.bn(x)
         return x
     
     def reconstruct(self,x_1,x_2):
@@ -101,7 +104,7 @@ class CRU(nn.Module):
 class ScConv(nn.Module):
     def __init__(self,
                 op_channel:int,
-                group_num:int = 16,
+                group_num:int = 4,
                 gate_treshold:float = 0.5,
                 alpha:float = 1/2,
                 squeeze_radio:int = 2 ,
