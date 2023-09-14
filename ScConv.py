@@ -45,7 +45,7 @@ class SRU(nn.Module):
 
     def forward(self,x):
         gn_x        = self.gn(x)
-        w_gamma     = self.gn.weight/sum(self.gn.weight)
+        w_gamma     = self.gn.weight/torch.sum(self.gn.weight)
         w_gamma     = w_gamma.view(1,-1,1,1)
         reweigts    = self.sigomid( gn_x * w_gamma )
         # Gate
