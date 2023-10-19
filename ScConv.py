@@ -35,7 +35,7 @@ class SRU(nn.Module):
                  oup_channels:int, 
                  group_num:int = 16,
                  gate_treshold:float = 0.5,
-                 torch_gn:bool = False
+                 torch_gn:bool = True
                  ):
         super().__init__()
         
@@ -45,16 +45,16 @@ class SRU(nn.Module):
 
     def forward(self,x):
         gn_x        = self.gn(x)
-        w_gamma     = self.gn.weight/torch.sum(self.gn.weight)
+        w_gamma     = self.gn.weight/sum(self.gn.weight)
         w_gamma     = w_gamma.view(1,-1,1,1)
         reweigts    = self.sigomid( gn_x * w_gamma )
         # Gate
-        info_mask   = reweigts>=self.gate_treshold
-        noninfo_mask= reweigts<self.gate_treshold
-        x_1         = info_mask * gn_x
-        x_2         = noninfo_mask * gn_x
-        x           = self.reconstruct(x_1,x_2)
-        return x
+        w1          = torch.where(reweigts > self.gate_treshold, torch.ones_like(reweigts), reweigts) # 大于门限值的设为1，否则保留原值
+        w2          = torch.where(reweigts > self.gate_treshold, torch.zeros_like(reweigts), reweigts) # 大于门限值的设为0，否则保留原值
+        x_1         = w1 * x
+        x_2         = w2 * x
+        y           = self.reconstruct(x_1,x_2)
+        return y
     
     def reconstruct(self,x_1,x_2):
         x_11,x_12 = torch.split(x_1, x_1.size(1)//2, dim=1)
