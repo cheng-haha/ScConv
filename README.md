@@ -3,4 +3,3 @@ This is the unofficial implementation of [SCConv: Spatial and Channel Reconstruc
 
 Update: Solved some bugs in SRU, thanks to @[huihui43](https://github.com/huihui43) , [zhangzh16](https://github.com/zhangzh16).
 ## Actually, you just need to insert the ScConv into your model anywhere.
-Welcome to submit your issues.
